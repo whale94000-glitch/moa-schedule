@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AISCM 회원등록 테스트</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      max-width: 540px;
+      margin: 40px auto;
+      padding: 24px;
+      background: #f8fafc;
+      color: #0f172a;
+    }
+    .card {
+      background: #ffffff;
+      padding: 28px;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
+      margin-bottom: 24px;
+    }
+    h2 { margin-top: 0; font-size: 1.4rem; color: #1e293b; }
+    .form-group { margin-bottom: 16px; }
+    label { display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 6px; color: #475569; }
+    input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      box-sizing: border-box;
+    }
+    input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
+    button {
+      width: 100%;
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 6px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:hover { background: #1d4ed8; }
+    #status { margin-top: 12px; font-size: 0.9rem; text-align: center; }
+    .success { color: #16a34a; }
+    .error { color: #dc2626; }
+    .member-item {
+      padding: 10px 0;
+      border-bottom: 1px solid #e2e8f0;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.9rem;
+    }
+    .member-item:last-child { border-bottom: none; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>회원 등록 (AISCM)</h2>
+    <form id="registerForm">
+      <div class="form-group">
+        <label for="name">이름</label>
+        <input type="text" id="name" placeholder="홍길동" required>
+      </div>
+      <div class="form-group">
+        <label for="email">이메일</label>
+        <input type="email" id="email" placeholder="example@aisc.com" required>
+      </div>
+      <div class="form-group">
+        <label for="phone">전화번호</label>
+        <input type="tel" id="phone" placeholder="010-1234-5678" required>
+      </div>
+      <button type="submit" id="submitBtn">등록하기</button>
+      <div id="status"></div>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>등록된 회원 목록</h2>
+    <div id="memberList">불러오는 중...</div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = "https://xxedomimfvxflrsxngjk.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh4ZWRvbWltZnZ4Zmxyc3huZ2prIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMzMzA0MzAsImV4cCI6MjEwODkwNjQzMH0.QgJJP7B-Jd_DR9Im08zpVtIn9rka_ip9Ar0iWDCYfck";
+
+    const { createClient } = supabase;
+    const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    async function loadMembers() {
+      const listEl = document.getElementById('memberList');
+      const { data, error } = await client
+        .from('members')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        listEl.innerHTML = `<span class="error">목록 조회 실패: ${error.message}</span>`;
+        return;
+      }
+      if (!data || data.length === 0) {
+        listEl.innerHTML = '<span style="color:#64748b;">등록된 회원이 없습니다.</span>';
+        return;
+      }
+      listEl.innerHTML = data.map(m => `
+        <div class="member-item">
+          <div>
+            <strong>${m.name}</strong> (${m.email})
+            <div style="font-size:0.8rem;color:#64748b;">${m.phone}</div>
+          </div>
+          <div style="font-size:0.75rem;color:#94a3b8;">
+            ${new Date(m.created_at).toLocaleDateString()}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const statusEl = document.getElementById('status');
+      const submitBtn = document.getElementById('submitBtn');
+
+      const name = document.getElementById('name').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const phone = document.getElementById('phone').value.trim();
+
+      submitBtn.disabled = true;
+      statusEl.className = '';
+      statusEl.textContent = '등록 중...';
+
+      const { data, error } = await client
+        .from('members')
+        .insert([{ name, email, phone }]);
+
+      submitBtn.disabled = false;
+
+      if (error) {
+        statusEl.className = 'error';
+        statusEl.textContent = '등록 실패: ' + error.message;
+      } else {
+        statusEl.className = 'success';
+        statusEl.textContent = '회원 등록이 완료되었습니다!';
+        document.getElementById('registerForm').reset();
+        loadMembers();
+      }
+    });
+
+    loadMembers();
+  </script>
+</body>
+</html>
