@@ -35,3 +35,4 @@ npm run dev
 npm run build
 ```
 빌드된 파일은 `dist/` 폴더에 생성됩니다.
+
