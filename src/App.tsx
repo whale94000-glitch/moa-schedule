@@ -6,7 +6,7 @@ export default function App() {
         <div className="absolute -inset-4 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-3xl blur-2xl opacity-20 animate-pulse pointer-events-none" />
 
         <h1 className="relative text-6xl sm:text-8xl md:text-9xl font-black tracking-tight bg-gradient-to-r from-blue-400 via-indigo-300 to-purple-400 bg-clip-text text-transparent">
-          hello world
+          Hello You
         </h1>
       </div>
 
